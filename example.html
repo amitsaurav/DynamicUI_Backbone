@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="css/bootstrap-combined.min.css" rel="stylesheet" />
+        <link href="css/font-awesome.css" rel="stylesheet" />
+        <style>
+            .section {
+                border: 1px solid #cccccc;
+                font-size: .9em;
+                margin-bottom: 1em;
+                border-radius: 5px;
+            }
+
+            .sectionheader {
+                font-size: 14px;
+                background: #e4e4e4;
+                margin-left: 0px;
+                border-radius:5px 5px 0px 0px;
+                height: 22px;
+            }
+
+            .sectionsummary {
+                display:none;
+            }
+
+            .sectionsummary div {
+                background: #e4e4e4;
+            }
+
+            .widget {
+                margin-bottom: 10px;
+            }
+        </style>
+        <script src="jquery.min.js"></script>
+        <script src="underscore-min.js"></script>
+        <script src="backbone-min.js"></script>
+    </head>
+    <body>
+        <div id="container" class="container">
+            <div class="row"></div>
+        </div>
+
+        <form id="fulfillmentForm">
+
+        </form>
+
+        <script type="text/template" id="security_group_template">
+            <div class="widget span6">
+                <div><%=name%></div>
+                <span>sg widget</span>
+            </div>
+        </script>
+
+        <script type="text/template" id="elastic_ip_template">
+            <div class="widget span6">
+                <div><%=name%></div>
+                <span>eip widget</span>
+            </div>
+        </script>
+
+        <script type="text/template" id="region_template">
+            <div class="span 12"> </div>
+            <div class="widget span6">
+                <div><%=name%></div>
+                <select>
+                    <% regions.each(function(region) { %>
+                        <option value="<%= region.get('id') %>"><%= region.get('name') %></option>
+                    <% }); %>
+                </select>
+                <div class='detail'></div>
+            </div>
+        </script>
+
+        <script type="text/template" id="vpc_template">
+            <div class="widget span6">
+                <div><%=name%></div>
+                <span>vpc widget</span>
+            </div>
+        </script>
+
+        <script type="text/template" id="link_template">
+            <div class="widget span6">
+                <a href='<%= url %>'><%=name%></a>
+            </div>
+        </script>
+
+        <script type="text/template" id="text_template">
+            <div class="widget span12">
+                <span>text template</span>
+            </div>
+        </script>
+
+        <script type="text/template" id="section_template">
+            <div class="section">
+                <div class="sectionheader row">
+                    <div class="sectionName span10"><%=name%></div>
+                    <div class="sectionexpandcollapse span1"><i class="icon-large icon-angle-down"></i></div>
+                </div>
+                <div class="sectionsummary row">
+                    <div class="span12">Summary</div>
+                </div>
+                <div class="sectioncontent">
+                    <div class="instructions"></div>
+                </div>
+            </div>
+        </script>  
+        <script type="text/template" id="region_instructions_template">
+            <div>
+                Region instructions
+            </div>
+        </script>
+
+        <script type="text/template" id="vpc_instructions_template">
+            <div>
+                Vpc instructions
+            </div>
+        </script>
+
+        <script type="text/template" id="subsection_template">
+            <div class="row-fluid subsectionContainer">
+                <span><%=name%></span>
+            </div>
+        </script>
+
+        <script type="text/template" id="security_settings_template">
+            <div>
+                Security settings instructions
+            </div>
+        </script>
+
+        <script type="text/template" id="keyPair_template">
+            <div>
+                key pair widget
+            </div>
+        </script>
+
+        <script type="text/template" id="ec2InstanceType_template">
+            <div>
+                instance type widget
+            </div>
+        </script>
+
+        <script type="text/template" id="subnet_template">
+            <div class="widget span6">
+                <div><%=name%></div>
+                <select>
+                    <% subnets.each(function(subnet) { %>
+                        <option value="<%= subnet.get('name') %>"><%= subnet.get('cidrBlock') %></option>
+                    <% }); %>
+                </select>
+                <div class='detail'></div>
+            </div>
+        </script>
+
+        <script type="text/template" id="subnet_detail_template">
+            <div>
+                <span>Availability Zone: </span><span><%=subnet.get('availabilityZone')%></span>
+                <span>Cidr Block: </span><span><%=subnet.get('cidrBlock')%></span>
+            </div>
+        </script>
+
+        <script type="text/javascript">
+
+            function sleep(milliseconds) 
+            {
+              var e = new Date().getTime() + (milliseconds);
+              while (new Date().getTime() <= e) {}
+            }
+
+            var Region = Backbone.Model.extend({
+                defaults: {
+                    id: null,
+                    name: null,
+                }
+            });
+            var Regions = Backbone.Collection.extend({
+                model: Region
+            });
+
+            var Subnet = Backbone.Model.extend({
+              defaults : {
+                name : "testName",
+                cidrBlock: "testCidrBlock",
+                availabilityZone: "az"
+              },
+            });
+
+            var Subnets = Backbone.Collection.extend({
+                model : Subnet,
+                findSubnetByName: function(name) {
+                    var s = this.find(function(subnet) { 
+                        return subnet.get('name') === name; 
+                    });
+
+                    return s;
+                }
+            });
+
+            var DataLayer = {
+                // for ajax calls
+
+                getSubnets: function getSubnets(params) {
+
+                    var subnetsCollection = new Subnets();
+                    subnetsCollection.add(new Subnet({name: "subnet1", cidrBlock: "10.0.0.1/24", availabilityZone: "us-east-1a"}));
+                    subnetsCollection.add(new Subnet({name: "subnet2", cidrBlock: "10.0.0.2/24", availabilityZone: "us-east-1b"}));
+                    params.success(subnetsCollection);
+                },
+
+                
+            };
+
+            var Cache = {
+                memory: {},
+                initialize: function() {
+                    var functions = _.functions(DataLayer);
+
+                    _.each(functions, function(fn) {
+                        var fnName = fn.toString();
+                        Cache[fnName] = function() {
+                            var args = arguments[0];
+
+                            var argsWithoutCallbacks = _.omit(args, ["error", "success"]);
+
+                            var cacheKey = fnName + JSON.stringify(argsWithoutCallbacks);
+
+                            if (Cache.memory[cacheKey]) {
+                                args.success(Cache.memory[cacheKey]);
+                                return;
+                            }
+
+                            args.success = _.wrap(args.success, function(originalCallback, result) {
+                                Cache.memory[cacheKey] = result;
+                                originalCallback(result);
+                            });
+
+                            DataLayer[fnName](args);
+                        };
+                    }, this);
+                }
+            }
+            Cache.initialize();
+
+            var MPBaseView = Backbone.View.extend({
+
+                initialize: function() {
+                    this.type = this.options.type || '';
+                    if (this.options.widgetInfo) {
+                        this.name = this.options.widgetInfo.name || '';
+                        this.type = this.type || this.options.widgetInfo.type || '';
+                    }
+                    this.setupDependencyListening();
+                },
+
+                setupDependencyListening: function() {
+                    if (!this.options.dependsOn) return;
+
+                    for (var i = 0; i < this.options.dependsOn.length; i++) {
+                        var dependencyElement = $("#"+this.options.dependsOn[i]);
+                        dependencyElement.change(this.dependencyChanged);
+                    }
+                },
+
+                dependencyChanged: function() {
+                    alert("test");
+                },
+
+                render: function() {
+                    this.$el.html(this.template({ name: this.name }));
+                    return this;
+                },
+
+                isDoubleWidth: function() {
+                    return false;
+                },
+
+                getSummary: function() {
+                    if (!this.options.children || this.options.children.length === 0) return ["default summary"];
+
+                    var summary = [];
+                    for (var i = 0; i < this.options.children.length; i++) {
+                        var s = this.options.children[i].getSummary();
+                        if (!s) continue;
+                        summary = summary.concat(s);
+                    }
+                    return summary;
+                },
+
+                updateFormField: function(value) {
+                    value = value||"";
+
+                    var name = this.options.parameterId;
+                    if (!name) return;
+
+                    var formField = $("#"+name);
+
+                    if (formField.length === 0) {
+                        throw new Error("Expected to but did not find a form field with id: " + name);
+                    }
+
+                    formField.attr("value", name + " " + value);
+                    formField.trigger("change");
+                }
+
+            });
+
+            var SectionView = MPBaseView.extend({
+                template: _.template($("#section_template").html()),
+
+                events: {
+                        "click i": "expandCollapseClicked"
+                    },
+
+                sectionTypeToInstructions: {
+                    'region': '#region_instructions_template',
+                    'vpcSettings': '#vpc_instructions_template',
+                    'securitySettings': '#security_settings_template'
+                },
+
+                initialize: function() {
+                    _.bindAll(this, "expandCollapseClicked");
+                },
+
+                render: function() {
+                    this.$el.html(this.template({ name: this.options.name }));
+                    this.getSectionInstructions();
+
+                    if (!this.options.children || this.options.children.length === 0) {
+                        return this;
+                    }
+
+                    this.children = this.options.children;
+
+                    for (var i=0; i < this.options.children.length; i++) {
+                        var content = this.options.children[i].render().el;
+                        this.$el.find(".sectioncontent").append(content);
+                    }
+
+                    return this;
+                },
+
+                getSectionInstructions: function() {
+                    if (!this.type) return;
+
+                    var instructionsTemplateName = this.sectionTypeToInstructions[this.type];
+
+                    if (!instructionsTemplateName) return;
+
+                    var template = _.template($(instructionsTemplateName).html()); 
+                    this.$el.find('.instructions').html(template);
+                },
+
+                expandCollapseClicked: function() {
+                    var collapseExpandIcon = this.$el.find(".sectionexpandcollapse i");
+
+                    if (collapseExpandIcon.hasClass("icon-angle-down")) {
+                        this.collapse();
+                    } else {
+                        this.expand();
+                    }
+                },
+
+                expand: function() {
+                    var collapseExpandIcon = this.$el.find(".sectionexpandcollapse i");
+                    collapseExpandIcon.removeClass("icon-angle-up");
+                    collapseExpandIcon.addClass("icon-angle-down");
+                    
+                    this.$el.find(".sectioncontent").show();
+                    this.$el.find(".sectionsummary").hide();
+                },
+
+                collapse: function() {
+                    var collapseExpandIcon = this.$el.find(".sectionexpandcollapse i");
+                    collapseExpandIcon.removeClass("icon-angle-down");
+                    collapseExpandIcon.addClass("icon-angle-up");
+                    this.$el.find(".sectioncontent").hide();
+                    this.$el.find(".sectionsummary").show();
+                    this.setSummary();
+                },
+
+                setSummary: function() {
+                    var summary = this.getSummary();
+                    var sectionSummary = this.$el.find(".sectionsummary div");
+                    sectionSummary.empty();
+
+                    var summaryText = summary.join(", ");
+                    sectionSummary.html(summaryText);
+
+                },
+            });
+
+            var SubsectionView = MPBaseView.extend({
+                template: _.template($("#subsection_template").html()),
+
+                render: function() {
+                    this.$el.html(this.template({ name: this.options.name }));
+
+                    if (!this.options.children || !this.options.children.length === 0) {
+                        throw new Error("No child views to render");
+                    }
+
+                    this.children = this.options.children;
+
+                    for (var i=0; i < this.options.children.length; i++) {
+                        var content = this.options.children[i].render().el;
+                        this.$el.find(".subsectionContainer").append(content);
+                    }
+
+                    return this;
+                },
+            });
+
+            var SubnetDetailView = MPBaseView.extend({
+                template: _.template($("#subnet_detail_template").html()),
+
+                render: function() {
+                    this.$el.html(this.template({ subnet: this.model }));
+                    return this;
+                }
+            });
+
+            var KeyPairView = MPBaseView.extend({
+                template: _.template($("#keyPair_template").html()),
+
+                render: function() {
+                    this.$el.html(this.template());
+                    return this;
+                }
+            });
+
+            var Ec2InstanceTypeView = MPBaseView.extend({
+                template: _.template($("#ec2InstanceType_template").html()),
+
+                render: function() {
+                    var embeddedData = this.data;
+                    this.$el.html(this.template({regions: embeddedData}));
+                    return this;
+                }
+            });
+
+            var SubnetView = MPBaseView.extend({
+                template: _.template( $("#subnet_template").html()),
+                events: {
+                        "change select": "subnetSelected"
+                    },
+
+                initialize: function() {
+                    _.bindAll(this, "render");
+                    this.model = new Subnets();
+                    this.model.bind('change', this.render);
+                    this.model.bind('reset', this.render); 
+                    this.name = this.options.widgetInfo.name;                   
+                    this.getData();
+                },
+
+                render: function() {
+                    this.$el.html(this.template({ subnets: this.model, name: this.name }));
+                    return this;
+                },
+
+                renderDetail: function(selectedSubnet) {
+                    var subnetDetailView = new SubnetDetailView({model: selectedSubnet});
+                    this.$('.detail').html(subnetDetailView.render().el);
+                },
+
+                getSelectedSubnet: function() {
+                    var name = this.$("select").find(":selected").val();
+                    return this.model.findSubnetByName(name);
+                },
+
+                subnetSelected: function() {
+                    var selectedSubnet = this.getSelectedSubnet();
+                    if (this.options.parameterId) {
+                        this.updateFormField(selectedSubnet.get("cidrBlock"));
+                    }
+                    this.renderDetail(selectedSubnet);
+                },
+
+                getData: function() {
+                    this.model.reset();
+                    Cache.getSubnets(
+                        {
+                            vpc: "vpc1",
+                            success: function(result) {
+                                result.each(function(subnet){
+                                    this.model.add(subnet);
+                                }, this);
+                            }.bind(this), 
+                            error: null
+                        });
+                },
+
+                getSummary: function() {
+                    var selectedSubnet = this.getSelectedSubnet();
+                    if (!selectedSubnet) return "";
+
+                    //explicitly read a property
+                    return "Subnet: " + selectedSubnet.get("cidrBlock");
+                }
+            });
+
+            var TextView = MPBaseView.extend({
+                template: _.template($("#text_template").html()),
+                isDoubleWidth: function() {
+                    return true;
+                }
+            });
+
+
+            var LinkView = MPBaseView.extend({
+                template: _.template($("#link_template").html()),
+                initialize: function() {
+                    this.name = this.options.widgetInfo.name;
+                    this.url = this.options.widgetInfo.url;
+                },
+                render: function() {
+                    this.$el.html(this.template({ name: this.name, url: this.url }));
+                    return this;
+                },
+            });
+
+            var VpcView = MPBaseView.extend({
+                template: _.template($("#vpc_template").html()),
+
+                getSummary: function() {
+                    return "VPC: some vpc";
+                },
+
+                render: function() {
+                    this.$el.html(this.template({ }));
+                    return this;
+                },
+
+                dependencyChanged: function() {
+                    alert("dependency changed query for vpc info again");
+                },
+
+            });
+
+            var ElasticIpView = MPBaseView.extend({
+                template: _.template($("#elastic_ip_template").html()),
+            });
+
+            var SecurityGroupView = MPBaseView.extend({
+                template: _.template($("#security_group_template").html()),
+
+                getSummary: function() {
+                    return "Security Group: selectedGroup";
+                }
+            });
+
+            var RegionView = MPBaseView.extend({
+                template: _.template($("#region_template").html()),
+                events: {
+                    "change select": "regionSelected"
+                },
+                render: function() {
+                    this.$el.html(this.template({ regions: this.getData() }));
+                    return this;
+                },
+
+                getData: function() {
+                    //could also call api and concatenate with the embedded data in options.data
+                    var regions = new Regions();
+
+                    if (this.options.data) {
+                        for (var i = 0; i < this.options.data.length; i++) {
+                            regions.add(this.options.data[i]);
+                        }
+                    }
+                    return regions;
+                },
+
+                regionSelected: function() {
+                    var region = this.$("select").find(":selected").val();
+                    this.updateFormField(region);
+                }
+            });
+
+            var Renderer = (function() {
+                function Renderer(uidoc, container) {
+                    this.container = container;
+                    this.doc = uidoc;
+                    this.isPreprocessed = false;
+                    this.widgets = {};
+
+                    this.widgets["subnet"] = SubnetView;
+                    this.widgets["vpc"] = VpcView;
+                    this.widgets["elasticIp"] = ElasticIpView;
+                    this.widgets["securityGroup"] = SecurityGroupView;
+                    this.widgets["link"] = LinkView;
+                    this.widgets["textBlock"] = TextView;
+                    this.widgets["region"] = RegionView;
+                    this.widgets["keyPair"] = KeyPairView;
+                    this.widgets["ec2InstanceType"] = Ec2InstanceTypeView;
+                }
+
+                Renderer.prototype.preprocess = function() {
+                    if (this.isPreprocessed) return;
+                    if (!this.doc.sections) return;
+
+                    this.preprocessSections(this.doc.sections);
+
+                    this.isPreprocessed = true;
+                };
+
+                Renderer.prototype.preprocessSections = function(sections) {
+                    for (var i = 0; i < sections.length; i++) {
+                        var section = sections[i];
+                        if (section.sections) {
+                            this.preprocessSections(section.sections);
+                        }
+                        if (section.widgets) {
+                            for (var j = 0; j < section.widgets.length; j++) {
+                                var widget = section.widgets[j];
+                                this.createFormFields(widget.id);       
+                            }
+                        }
+                    }  
+                };
+
+                Renderer.prototype.createFormFields = function(parameterId) {
+                    if (!parameterId) return;
+
+                    $("#fulfillmentForm").append("<input id='" + parameterId + "' name='" + parameterId + "'/>");
+                };
+
+                Renderer.prototype.render = function() {
+                    if (!this.doc.sections) return;
+
+                    var sections = [];
+                    for (var i = 0; i < this.doc.sections.length; i++) {
+                        var section = this.doc.sections[i];
+                        $(this.container).append(this.renderSection(section).render().el);
+                    }                   
+                };
+
+                Renderer.prototype.renderSection = function(section) {
+                    var subsections = [];
+
+                    if (section.sections) {
+                        for (var i = 0; i < section.sections.length; i++) {
+                            var subsection = section.sections[i];
+                            subsections.push(this.renderSubsection(subsection));
+                        }
+                    } else if (section.widgets && section.widgets.length > 0) { // widgets directly under a section
+                        var newSubsection = {};
+                        newSubsection.widgets = section.widgets;
+                        subsections.push(this.renderSubsection(newSubsection));
+                    }
+
+                    var section = new SectionView({name: section.name, type: section.type, children: subsections});
+                    return section;
+                };
+
+                Renderer.prototype.renderSubsection = function(subsection) {
+                    var widgets = [];
+
+                    for (var i = 0; i < subsection.widgets.length; i++) {
+                        var widget = subsection.widgets[i];
+                        widgets.push(this.renderWidget(widget));
+                    }
+
+                    var subsection = new SubsectionView({name: subsection.name, children: widgets});
+                    return subsection;
+
+                };
+
+                Renderer.prototype.renderWidget = function(widgetInfo) {
+                    var widgetType = this.widgets[widgetInfo.type];
+                    if (!widgetType) {
+                        throw new Error("Unmapped widget type: " + widgetInfo.type);
+                    }
+
+                    var embeddedData = null;
+
+                    if (widgetInfo.data) {
+                        embeddedData = this.doc.data[widgetInfo.data];
+                    }
+                    return new widgetType({ widgetInfo: widgetInfo, data: embeddedData, parameterId: widgetInfo.id, dependsOn: widgetInfo.dependsOn });
+                };              
+
+                return Renderer;
+            })();
+
+        var uiDoc = {
+                data: {
+                    regionInfo: [{ id: "us-east-1", name: "Virginia"}, { id: "us-west-1", name: "Northern California" }],
+                    instanceTypes: ["small", "medium", "large"]
+                },
+                sections: [
+                    { 
+                        name: "Region",
+                        type: "region",
+                        widgets: [
+                            {
+                                type: "region",
+                                id: "regionId",
+                                data: "regionInfo"
+                            }
+                        ]
+                    },
+                    { 
+                        name: "EC2 Instance Type",
+                        type: "ec2InstanceType",
+                        widgets: [
+                            {
+                                type: "ec2InstanceType",
+                                id: "VPXPrimary"
+                            },
+                        ]
+                    },
+                    { 
+                        name: 'VPC Settings',
+                        type: 'vpcSettings',
+                        sections: [
+                                    {
+                                        widgets: [
+                                            {
+                                                type: "vpc",
+                                                id: "VpcID",
+                                                dependsOn: ["regionId"]
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        name: "Network interface 1",
+                                        widgets: [
+                                            {
+                                                type: "subnet",
+                                                id: "NsipSubnet",
+                                                dependsOn: ["regionId", "VpcID"] 
+                                            },
+                                            {
+                                                type: "securityGroup",
+                                                id: "PrivateSecurityGroup",   
+                                                data: ""
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        name: "Network interface 3",
+                                        widgets: [
+                                            {                             
+                                                type: "subnet",
+                                                id: "ClientSubnet",   
+                                                dependsOn: ["regionId", "VpcID"] 
+                                            },                                   
+                                            {
+                                                type: "securityGroup",
+                                                id: "PublicSecurityGroup",
+                                                data: ""
+                                            }  
+                                        ]
+                                    }
+                                ]
+                    },
+                    { 
+                        name: "Security Settings",
+                        type: "securitySettings",
+                                widgets: [
+                                    {
+                                        type: "keyPair",
+                                        id: "keyPair1",   
+                                        dependsOn: ["region"] 
+                                    },
+                                    
+                                    {
+                                        type: "securityGroup",
+                                        id: "",  
+                                    },     
+                                     
+                                    {
+                                        type: "link",
+                                        id: "IAMPermission", 
+                                    },                                                  
+                                ]                          
+                    }
+                ]
+            };
+
+            var r = new Renderer(uiDoc, '#container');
+            r.preprocess();
+            r.render();
+
+        </script>
+    </body>
+</html>

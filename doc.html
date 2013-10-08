@@ -1,0 +1,59 @@
+
+
+Each UI document will consist of an array of sections, where a section corresponds to one of the settings boxes on our fulfillment page.  One section could be for 'region' another for 'VPC settings' etc.  Each section will have a name and also an array specifying what should be shown in that section (an array of widgets).  
+
+Widgets are the smaller groups of html elements that will focus on providing the user with one piece of information.  For example:  we will have a widget for just displaying text to the user (for instructions), another widget that shows the available regions, another that shows a list of vpcs, another for subnets.  Each of those widgets can be designed separately using HTML and CSS for whatever type of appearance is needed.
+
+Here is a piece of a document in Javascript:
+
+var uidocument = 
+
+                sections: [
+                    { 
+                        name: "Region",
+                        widgets: [
+                            {
+                                type: "textBlock",
+                                header: "Region instructions",
+                                content: "Instructions, instructions, instructions"
+                            },
+                        ]
+                    },
+                    { 
+                        name: 'VPC Settings', 
+                        widgets: [
+                                    {
+                                        type: "textBlock",
+                                        header: "Some instructions for filling out the VPC wizard",
+                                        content: "Content"
+
+                                    },
+                                    {
+                                        type: "vpc",
+                                        name: "VPC",
+                                        helpText: "",
+                                        id: "vpc1",
+                                    },
+                                ]
+                    }
+                    ];
+
+
+This will result in rendering two boxes on the page, the first will contain one widget (for showing text) and the next box will contain two widgets -- one for showing text another for showing vpc information.
+
+The type of a widget is required.  The type is what determines which UI element will be rendered.
+The next most important field is id.  The id is not required to render a UI element but if we should want to receive a user's input or selection from a widget, the id IS required.  It is also required if we want to refer to a widget from another widget.
+
+For example retrieving a list of subnets depends on what vpc has been selected.  A subnet widget alone is not enough to display a list of subnets. To get a useful subnet widget it must refer to a vpc and this brings us to another important field (dependsOn).  If we want to add a subnet widget to the above document we would need to add a widget entry that looks something like this:
+
+{
+    type: "subnet",
+    name: "Subnet",
+    helpText: "",
+    id: "subnet1",   //indicating we are interested in recording what the user selects in this widget
+    dependsOn: "vpc1" // the id of the widget above that this subnet widget is tied to for its data
+}
+
+Currently, there is no validation for whether a dependsOn relationship makes sense.  For example we could make a subnet widget depend on a security group widget.  This doesn't make sense (a vpc is required to get a list of subnets not a security group) but at the moment the current design would result in a failure to load the data.  We could build in some validation such as ensuring that a subnet widget doesn't have a dependsOn relationship on anything but a vpc widget.
+
+I will provide more information on the various widget type names.
