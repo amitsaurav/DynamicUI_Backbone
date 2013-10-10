@@ -94,7 +94,11 @@
             <div class="section">
                 <div class="sectionheader row">
                     <div class="sectionName span10"><%=name%></div>
-                    <div class="sectionexpandcollapse span1"><i class="icon-large icon-angle-down"></i></div>
+                    <% if (showModal === true) { %>
+                        <div class="sectionexpandcollapse span1"><i class="icon-large icon-gear"></i></div>
+                    <% } else { %>
+                        <div class="sectionexpandcollapse span1"><i class="icon-large icon-angle-down"></i></div>
+                    <% } %>
                 </div>
                 <div class="sectionsummary row">
                     <div class="span12">Summary</div>
@@ -103,7 +107,7 @@
                     <div class="instructions"></div>
                 </div>
             </div>
-        </script>  
+        </script>
         <script type="text/template" id="region_instructions_template">
             <div>
                 Region instructions
@@ -322,7 +326,7 @@
                 },
 
                 render: function() {
-                    this.$el.html(this.template({ name: this.options.name }));
+                    this.$el.html(this.template({ name: this.options.name, showModal: this.options.showModal }));
                     this.getSectionInstructions();
 
                     if (!this.options.children || this.options.children.length === 0) {
@@ -637,19 +641,21 @@
 
                 Renderer.prototype.renderSection = function(section) {
                     var subsections = [];
+                    var showModal = false;
 
                     if (section.sections) {
                         for (var i = 0; i < section.sections.length; i++) {
                             var subsection = section.sections[i];
                             subsections.push(this.renderSubsection(subsection));
                         }
+                        showModal = true; // This section is a larger section and needs a modal
                     } else if (section.widgets && section.widgets.length > 0) { // widgets directly under a section
                         var newSubsection = {};
                         newSubsection.widgets = section.widgets;
                         subsections.push(this.renderSubsection(newSubsection));
                     }
 
-                    var section = new SectionView({name: section.name, type: section.type, children: subsections});
+                    var section = new SectionView({name: section.name, type: section.type, children: subsections, showModal: showModal });
                     return section;
                 };
 
