@@ -20,6 +20,10 @@
                 padding: 8px 8px 0px 10px;
             }
 
+            .sectioncontent {
+                padding: 10px;
+            }
+
             .sectionsummary {
                 display:none;
             }
@@ -44,22 +48,21 @@
         </form>
 
         <script type="text/template" id="security_group_template">
-            <div class="widget span6">
+            <div class="span6">
                 <div><%=name%></div>
                 <span>sg widget</span>
             </div>
         </script>
 
         <script type="text/template" id="elastic_ip_template">
-            <div class="widget span6">
+            <div class="span6">
                 <div><%=name%></div>
                 <span>eip widget</span>
             </div>
         </script>
 
         <script type="text/template" id="region_template">
-            
-            <div class="widget span6">
+            <div class="span6">
                 <div><%=name%></div>
                 <select>
                     <% regions.each(function(region) { %>
@@ -71,20 +74,20 @@
         </script>
 
         <script type="text/template" id="vpc_template">
-            <div class="widget span6">
+            <div class="span6">
                 <div><%=name%></div>
                 <span>vpc widget</span>
             </div>
         </script>
 
         <script type="text/template" id="link_template">
-            <div class="widget span6">
+            <div class="span6">
                 <a href='<%= url %>'><%=name%></a>
             </div>
         </script>
 
         <script type="text/template" id="text_template">
-            <div class="widget span12">
+            <div class="span8">
                 <span>text template</span>
             </div>
         </script>
@@ -142,13 +145,17 @@
         </script>
 
         <script type="text/template" id="ec2InstanceType_template">
-            <div>
-                instance type widget
+            <div class="span6">
+                <select size="<%=instanceTypes.size()%>">
+                    <% instanceTypes.each(function(instanceType) { %>
+                        <option value="<%=instanceType.get('id')%>"><%=instanceType.get('name')%> (<%=instanceType.get('id')%>)</option>
+                    <% }); %>
+                </select>
             </div>
         </script>
 
         <script type="text/template" id="subnet_template">
-            <div class="widget span6">
+            <div class="span6">
                 <div><%=name%></div>
                 <select>
                     <% subnets.each(function(subnet) { %>
@@ -190,6 +197,17 @@
                 cidrBlock: "testCidrBlock",
                 availabilityZone: "az"
               },
+            });
+            
+            var InstanceType = Backbone.Model.extend({
+                defaults: {
+                    id: null,
+                    name: null
+                }
+            });
+            
+            var InstanceTypes = Backbone.Collection.extend({
+                modal: InstanceType
             });
 
             var Subnets = Backbone.Collection.extend({
@@ -450,13 +468,32 @@
                 }
             });
 
-            var Ec2InstanceTypeView = MPBaseView.extend({
+            var InstanceTypeView = MPBaseView.extend({
                 template: _.template($("#ec2InstanceType_template").html()),
+                events: {
+                    "change select": "instanceTypeSelected"
+                },
 
                 render: function() {
                     var embeddedData = this.data;
-                    this.$el.html(this.template({regions: embeddedData}));
+                    this.$el.html(this.template({instanceTypes: this.getData()}));
                     return this;
+                },
+
+                getData: function() {
+                    var instanceTypes = new InstanceTypes();
+
+                    if (this.options.data) {
+                        for (var i = 0; i < this.options.data.length; i++) {
+                            instanceTypes.add(this.options.data[i]);
+                        }
+                    }
+                    return instanceTypes;
+                },
+
+                instanceTypeSelected: function() {
+                    var instance = this.$("select :selected").val();
+                    this.updateFormField(instance);
                 }
             });
 
@@ -594,7 +631,7 @@
                 },
 
                 regionSelected: function() {
-                    var region = this.$("select").find(":selected").val();
+                    var region = this.$("select :selected").val();
                     this.updateFormField(region);
                 }
             });
@@ -614,7 +651,7 @@
                     this.widgets["textBlock"] = TextView;
                     this.widgets["region"] = RegionView;
                     this.widgets["keyPair"] = KeyPairView;
-                    this.widgets["ec2InstanceType"] = Ec2InstanceTypeView;
+                    this.widgets["ec2InstanceType"] = InstanceTypeView;
                 }
 
                 Renderer.prototype.preprocess = function() {
@@ -710,7 +747,7 @@
         var uiDoc = {
                 data: {
                     regionInfo: [{ id: "us-east-1", name: "Virginia"}, { id: "us-west-1", name: "Northern California" }],
-                    instanceTypes: ["small", "medium", "large"]
+                    instanceTypes: [{ id: "m1.small", name: "Standard Small"}, {id: "m1.xlarge", name: "Standard XL"}, {id: "c1.medium", name: "High-CPU Medium"}]
                 },
                 sections: [
                     { 
@@ -730,7 +767,8 @@
                         widgets: [
                             {
                                 type: "ec2InstanceType",
-                                id: "VPXPrimary"
+                                id: "instanceType",
+                                data: "instanceTypes"
                             },
                         ]
                     },
