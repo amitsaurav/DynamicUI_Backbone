@@ -21,26 +21,28 @@
 
             .sectionsummary {
                 display:none;
-            }
-
-            .sectionsummary div {
                 background: #e4e4e4;
             }
 
             .widget {
                 margin-bottom: 10px;
             }
+
+            .sectionToggler {
+                cursor: pointer;
+            }
         </style>
         <script src="jquery.min.js"></script>
+        <script src="bootstrap.min.js"></script>
         <script src="underscore-min.js"></script>
         <script src="backbone-min.js"></script>
     </head>
     <body>
-        <div id="container" class="container">
+        <div id="container" class="container span8">
             <div class="row"></div>
         </div>
 
-        <form id="fulfillmentForm">
+        <form id="fulfillmentForm" class="container span8">
 
         </form>
 
@@ -59,7 +61,7 @@
         </script>
 
         <script type="text/template" id="region_template">
-            <div class="span 12"> </div>
+            
             <div class="widget span6">
                 <div><%=name%></div>
                 <select>
@@ -92,20 +94,24 @@
 
         <script type="text/template" id="section_template">
             <div class="section">
-                <div class="sectionheader row">
-                    <div class="sectionName span10"><%=name%></div>
+                <div class="sectionheader">
+                    <div class="sectionName span7"><%=name%></div>
                     <% if (showModal === true) { %>
-                        <div class="sectionexpandcollapse span1"><i class="icon-large icon-gear"></i></div>
+                        <div class="sectionToggler right"><i class="icon-large icon-gear"></i></div>
                     <% } else { %>
-                        <div class="sectionexpandcollapse span1"><i class="icon-large icon-angle-down"></i></div>
+                        <div class="sectionToggler right"><i class="icon-large icon-angle-down"></i></div>
                     <% } %>
                 </div>
-                <div class="sectionsummary row">
-                    <div class="span12">Summary</div>
+                <div class="sectionsummary">
+                    <div>Summary</div>
                 </div>
-                <div class="sectioncontent">
-                    <div class="instructions"></div>
+                <% if (showModal === true) { %>
+                    <div class="sectioncontent fade modal" aria-hidden="true">
+                <% } else { %>
+                    <div class="sectioncontent">
+                <% } %>
                 </div>
+                <div class="instructions"></div>
             </div>
         </script>
         <script type="text/template" id="region_instructions_template">
@@ -312,7 +318,7 @@
                 template: _.template($("#section_template").html()),
 
                 events: {
-                        "click i": "expandCollapseClicked"
+                        "click i": "toggleSectionContent"
                     },
 
                 sectionTypeToInstructions: {
@@ -322,7 +328,7 @@
                 },
 
                 initialize: function() {
-                    _.bindAll(this, "expandCollapseClicked");
+                    _.bindAll(this, "toggleSectionContent");
                 },
 
                 render: function() {
@@ -354,10 +360,12 @@
                     this.$el.find('.instructions').html(template);
                 },
 
-                expandCollapseClicked: function() {
-                    var collapseExpandIcon = this.$el.find(".sectionexpandcollapse i");
+                toggleSectionContent: function() {
+                    var toggleIcon = this.$el.find(".sectionToggler i");
 
-                    if (collapseExpandIcon.hasClass("icon-angle-down")) {
+                    if (toggleIcon.hasClass('icon-gear')) {
+                        this.showModal();
+                    }else if (toggleIcon.hasClass("icon-angle-down")) {
                         this.collapse();
                     } else {
                         this.expand();
@@ -365,21 +373,39 @@
                 },
 
                 expand: function() {
-                    var collapseExpandIcon = this.$el.find(".sectionexpandcollapse i");
+                    var collapseExpandIcon = this.$el.find(".sectionToggler i");
                     collapseExpandIcon.removeClass("icon-angle-up");
                     collapseExpandIcon.addClass("icon-angle-down");
                     
-                    this.$el.find(".sectioncontent").show();
-                    this.$el.find(".sectionsummary").hide();
+                    var sectionContent = this.$el.find(".sectioncontent");
+                    this.$el.find(".sectionsummary").hide('fast', function() {
+                        sectionContent.show('fast');
+                    });
                 },
 
                 collapse: function() {
-                    var collapseExpandIcon = this.$el.find(".sectionexpandcollapse i");
+                    var collapseExpandIcon = this.$el.find(".sectionToggler i");
                     collapseExpandIcon.removeClass("icon-angle-down");
                     collapseExpandIcon.addClass("icon-angle-up");
-                    this.$el.find(".sectioncontent").hide();
-                    this.$el.find(".sectionsummary").show();
+
+                    var sectionSummary = this.$el.find(".sectionsummary");
+                    this.$el.find(".sectioncontent").hide('fast', function() {
+                        sectionSummary.show('fast');                        
+                    });
                     this.setSummary();
+                },
+
+                showModal: function() {
+                    var sectionSummary = this.$el.find(".sectionsummary");
+                    var sectionModal = this.$el.find(".sectioncontent");
+                    var thisView = this;
+
+                    sectionModal.on('hide.bs.modal', function () {
+                        sectionSummary.show();
+                        thisView.setSummary();
+                    });
+
+                    sectionModal.modal('show')
                 },
 
                 setSummary: function() {
@@ -389,7 +415,6 @@
 
                     var summaryText = summary.join(", ");
                     sectionSummary.html(summaryText);
-
                 },
             });
 
