@@ -13,15 +13,17 @@
 
             .sectionheader {
                 font-size: 14px;
-                background: #e4e4e4;
                 margin-left: 0px;
                 border-radius:5px 5px 0px 0px;
                 height: 22px;
             }
 
+            .sectionheaderExpanded {
+                background: #C9E1F4;
+            }
+
             .sectionsummary {
                 display:none;
-                background: #e4e4e4;
             }
 
             .widget {
@@ -377,10 +379,9 @@
                     collapseExpandIcon.removeClass("icon-angle-up");
                     collapseExpandIcon.addClass("icon-angle-down");
                     
-                    var sectionContent = this.$el.find(".sectioncontent");
-                    this.$el.find(".sectionsummary").hide('fast', function() {
-                        sectionContent.show('fast');
-                    });
+                    this.$el.find(".sectionsummary").hide();
+                    this.$el.find(".sectioncontent").show();
+                    this.$el.find(".sectionheader").addClass("sectionheaderExpanded");
                 },
 
                 collapse: function() {
@@ -388,10 +389,9 @@
                     collapseExpandIcon.removeClass("icon-angle-down");
                     collapseExpandIcon.addClass("icon-angle-up");
 
-                    var sectionSummary = this.$el.find(".sectionsummary");
-                    this.$el.find(".sectioncontent").hide('fast', function() {
-                        sectionSummary.show('fast');                        
-                    });
+                    this.$el.find(".sectioncontent").hide();
+                    this.$el.find(".sectionsummary").show();                        
+                    this.$el.find(".sectionheader").removeClass("sectionheaderExpanded");
                     this.setSummary();
                 },
 
