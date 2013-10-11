@@ -6,32 +6,28 @@
         <style>
             .section {
                 border: 1px solid #cccccc;
-                font-size: .9em;
-                margin-bottom: 1em;
+                margin-bottom: 20px;
                 border-radius: 5px;
             }
 
             .sectionheader {
-                font-size: 14px;
+                font-size: 20px;
                 margin-left: 0px;
                 border-radius:5px 5px 0px 0px;
-                height: 22px;
-            }
-
-            .sectionheaderExpanded {
-                background: #C9E1F4;
+                border-bottom: 1px solid #cccccc;
+                background-color: #EEEEEE;
+                height: 32px;
+                padding: 8px 8px 0px 10px;
             }
 
             .sectionsummary {
                 display:none;
             }
 
-            .widget {
-                margin-bottom: 10px;
-            }
-
             .sectionToggler {
                 cursor: pointer;
+                font-size: 15px;
+                width: 15px;
             }
         </style>
         <script src="jquery.min.js"></script>
@@ -41,7 +37,6 @@
     </head>
     <body>
         <div id="container" class="container span8">
-            <div class="row"></div>
         </div>
 
         <form id="fulfillmentForm" class="container span8">
@@ -95,14 +90,14 @@
         </script>
 
         <script type="text/template" id="section_template">
-            <div class="section">
+            <div class="section span8">
                 <div class="sectionheader">
-                    <div class="sectionName span7"><%=name%></div>
                     <% if (showModal === true) { %>
-                        <div class="sectionToggler right"><i class="icon-large icon-gear"></i></div>
+                        <div class="sectionToggler pull-right"><i class="icon-large icon-gear"></i></div>
                     <% } else { %>
-                        <div class="sectionToggler right"><i class="icon-large icon-angle-down"></i></div>
+                        <div class="sectionToggler pull-right"><i class="icon-large icon-angle-down"></i></div>
                     <% } %>
+                    <div class="sectionName"><%=name%></div>
                 </div>
                 <div class="sectionsummary">
                     <div>Summary</div>
@@ -381,7 +376,6 @@
                     
                     this.$el.find(".sectionsummary").hide();
                     this.$el.find(".sectioncontent").show();
-                    this.$el.find(".sectionheader").addClass("sectionheaderExpanded");
                 },
 
                 collapse: function() {
@@ -391,7 +385,6 @@
 
                     this.$el.find(".sectioncontent").hide();
                     this.$el.find(".sectionsummary").show();                        
-                    this.$el.find(".sectionheader").removeClass("sectionheaderExpanded");
                     this.setSummary();
                 },
 
