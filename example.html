@@ -33,6 +33,28 @@
                 font-size: 15px;
                 width: 15px;
             }
+
+            .subsectionContainer {
+                margin-left: 0px;
+            }
+
+            .innerPaneHeading {
+                font-size: 10px;
+                font-weight: bold;
+            }
+
+            .innerPane {
+                font-size: 10px;
+            }
+
+            select {
+             font-size: 12px;   
+            }
+
+            .underline {
+                border-bottom: 1px solid #cccccc;
+                margin: 0 10px 0 0; 
+            }
         </style>
         <script src="jquery.min.js"></script>
         <script src="bootstrap.min.js"></script>
@@ -62,7 +84,7 @@
         </script>
 
         <script type="text/template" id="region_template">
-            <div class="span6">
+            <div>
                 <div><%=name%></div>
                 <select>
                     <% regions.each(function(region) { %>
@@ -127,7 +149,7 @@
         </script>
 
         <script type="text/template" id="subsection_template">
-            <div class="row-fluid subsectionContainer">
+            <div class="subsectionContainer span8">
                 <span><%=name%></span>
             </div>
         </script>
@@ -145,12 +167,45 @@
         </script>
 
         <script type="text/template" id="ec2InstanceType_template">
-            <div class="span6">
-                <select size="<%=instanceTypes.size()%>">
-                    <% instanceTypes.each(function(instanceType) { %>
-                        <option value="<%=instanceType.get('id')%>"><%=instanceType.get('name')%> (<%=instanceType.get('id')%>)</option>
-                    <% }); %>
-                </select>
+            <div class="row">
+                <div class="span4">
+                    <select size="<%=instanceTypes.size()%>" class="span4">
+                        <% instanceTypes.each(function(instanceType) { %>
+                            <option value="<%=instanceType.get('id')%>"><%=instanceType.get('name')%> (<%=instanceType.get('id')%>)</option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="span4">
+                    <div class="row">
+                        <div class="span1 innerPaneHeading" id="memoryId">Memory</div>
+                        <div class="span3 innerPane" id="memoryValue"><%=instanceTypes.at(0).get('memory')%></div>
+                    </div>
+                    <div class=" row underline" />
+                    <div class="row">
+                        <div class="span1 innerPaneHeading" id="cpuId">CPU</div>
+                        <div class="span3 innerPane" id="cpuValue"><%=instanceTypes.at(0).get('cpu')%></div>
+                    </div>
+                    <div class=" row underline" />
+                    <div class="row">
+                        <div class="span1 innerPaneHeading" id="storageId">Storage</div>
+                        <div class="span3 innerPane" id="storageValue"><%=instanceTypes.at(0).get('storage')%></div>
+                    </div>
+                    <div class=" row underline" />
+                    <div class="row">
+                        <div class="span1 innerPaneHeading" id="platformId">Platform</div>
+                        <div class="span3 innerPane" id="platformValue"><%=instanceTypes.at(0).get('platform')%></div>
+                    </div>
+                    <div class=" row underline" />
+                    <div class="row">
+                        <div class="span1 innerPaneHeading" id="performanceId">Network Performance</div>
+                        <div class="span3 innerPane" id="performanceValue"><%=instanceTypes.at(0).get('network')%></div>
+                    </div>
+                    <div class=" row underline" />
+                    <div class="row">
+                        <div class="span1 innerPaneHeading" id="apiId">API Name</div>
+                        <div class="span3 innerPane" id="apiValue"><%=instanceTypes.at(0).get('id')%></div>
+                    </div>
+                </div>
             </div>
         </script>
 
@@ -190,6 +245,24 @@
             var Regions = Backbone.Collection.extend({
                 model: Region
             });
+            
+            var InstanceType = Backbone.Model.extend({
+                defaults: {
+                    id: null,
+                    name: null,
+                    memory: null,
+                    cpu: null,
+                    storage: null,
+                    network: null
+                },
+            });
+            
+            var InstanceTypes = Backbone.Collection.extend({
+                model: InstanceType,
+                findInstanceById: function(instanceId) {
+                    return this.findWhere({id: instanceId});
+                }
+            });
 
             var Subnet = Backbone.Model.extend({
               defaults : {
@@ -197,17 +270,6 @@
                 cidrBlock: "testCidrBlock",
                 availabilityZone: "az"
               },
-            });
-            
-            var InstanceType = Backbone.Model.extend({
-                defaults: {
-                    id: null,
-                    name: null
-                }
-            });
-            
-            var InstanceTypes = Backbone.Collection.extend({
-                modal: InstanceType
             });
 
             var Subnets = Backbone.Collection.extend({
@@ -475,8 +537,8 @@
                 },
 
                 render: function() {
-                    var embeddedData = this.data;
-                    this.$el.html(this.template({instanceTypes: this.getData()}));
+                    this.embeddedData = this.getData();
+                    this.$el.html(this.template({instanceTypes: this.embeddedData}));
                     return this;
                 },
 
@@ -492,8 +554,14 @@
                 },
 
                 instanceTypeSelected: function() {
-                    var instance = this.$("select :selected").val();
-                    this.updateFormField(instance);
+                    var instanceId = this.$("select :selected").val();
+                    var instance = this.embeddedData.findInstanceById(instanceId);
+                    this.$("#memoryValue").text(instance.get('memory'));
+                    this.$("#cpuValue").text(instance.get('cpu'));
+                    this.$("#storageValue").text(instance.get('storage'));
+                    this.$("#performanceValue").text(instance.get('network'));
+                    this.$("#apiValue").text(instance.get('id'));
+                    this.updateFormField(instanceId);
                 }
             });
 
@@ -747,7 +815,35 @@
         var uiDoc = {
                 data: {
                     regionInfo: [{ id: "us-east-1", name: "Virginia"}, { id: "us-west-1", name: "Northern California" }],
-                    instanceTypes: [{ id: "m1.small", name: "Standard Small"}, {id: "m1.xlarge", name: "Standard XL"}, {id: "c1.medium", name: "High-CPU Medium"}]
+                    instanceTypes: [
+                        // All the instance type metadata are already in the AWSMPShared.cfg so we do not want
+                        // to duplicate it here. This information will come from the Application once this page
+                        // gets added to the website.
+                        {
+                            id: "m1.small",
+                            name: "Standard Small",
+                            memory: "1.7 GiB",
+                            cpu: "1 EC2 Compute Unit (1 virtual core with 1 EC2 Compute Unit)",
+                            storage: "160 GB instance storage",
+                            network: "Moderate"
+                        },
+                        {
+                            id: "m1.xlarge",
+                            name: "Standard XL",
+                            memory: "15 GiB", 
+                            cpu: "8 EC2 Compute Units (4 virtual cores with 2 EC2 Compute Units each)",
+                            storage: "1690 GB instance storage",
+                            network: "High"
+                        },
+                        {
+                            id: "c1.medium",
+                            name: "High-CPU Medium",
+                            memory: "1.7 GiB",
+                            cpu: "5 EC2 Compute Units (2 virtual cores with 2.5 EC2 Compute Units each)",
+                            storage: "350 GB instance storage",
+                            network: "Moderate"
+                        }
+                    ]
                 },
                 sections: [
                     { 
