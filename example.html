@@ -61,6 +61,15 @@
                 border-bottom: 1px solid #cccccc;
                 margin: 0 10px 0 0; 
             }
+
+            .sectionContentSubHeading {
+                font-size: 14px;
+                font-weight: bold;
+            }
+
+            .sectionText {
+                font-size: 13px;
+            }
         </style>
         <script src="jquery.min.js"></script>
         <script src="bootstrap.min.js"></script>
@@ -167,9 +176,26 @@
         </script>
 
         <script type="text/template" id="keyPair_template">
-            <div>
-                key pair widget
+            <div class=row>
+                <div class="span8">
+                    <div class="sectionContentSubHeading">Select Key Pair</div>
+                    <div class="row">
+                        <div class="span4">
+                        <select class="span4">
+                            <% keyPairs.each(function(k) { %>
+                                <option value="<%= k.get('id') %>"><%= k.get('id') %></option>
+                            <% }); %>
+                        </select>
+                        </div>
+                        <div class="span4">
+                            <a href="#">Create a new key pair</a>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <span class="sectionText">
+            To ensure that no other person has access to your software, the software installs on an EC2 instance that uses an EC2 key pair that you choose or create. Choose an existing EC2 key pair in the list, or click to create a new key pair.
+            </span>
         </script>
 
         <script type="text/template" id="ec2InstanceType_template">
@@ -274,6 +300,16 @@
                 }
             });
 
+            var KeyPair = Backbone.Model.extend({
+                defaults: {
+                    id: null,
+                }
+            });
+
+            var KeyPairs = Backbone.Collection.extend({
+                model: KeyPair
+            });
+
             var DataLayer = {
                 // for ajax calls
 
@@ -285,7 +321,12 @@
                     params.success(subnetsCollection);
                 },
 
-                
+                getKeyPairs: function (params) {
+                    var keyPairCollection = new KeyPairs();
+                    keyPairCollection.add(new KeyPair({id: "key-pair-1"}));
+                    keyPairCollection.add(new KeyPair({id: "key-pair-2"}));
+                    params.success(keyPairCollection);
+                }
             };
 
             var Cache = {
@@ -515,9 +556,31 @@
             var KeyPairView = MPBaseView.extend({
                 template: _.template($("#keyPair_template").html()),
 
+                initialize: function() {
+                    _.bindAll(this, "render");
+                    this.model = new KeyPairs();
+                    this.model.bind('change', this.render);
+                    this.getData();
+                },
+
                 render: function() {
-                    this.$el.html(this.template());
+                    this.$el.html(this.template({keyPairs: this.model}));
                     return this;
+                },
+
+                getSummary: function() {
+                    return this.$("select :selected").text();
+                },
+
+                getData: function() {
+                    this.model.reset();
+                    Cache.getKeyPairs({
+                        success: function(result) {
+                            result.each(function(keyPair) {
+                                this.model.add(keyPair);
+                            }, this);
+                        }.bind(this)
+                    });
                 }
             });
 
