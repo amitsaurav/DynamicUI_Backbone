@@ -24,8 +24,14 @@
                 padding: 10px;
             }
 
+            .sectioncontent.modal {
+                display: none;
+            }
+
             .sectionsummary {
                 display:none;
+                font-size: 16px;
+                padding: 8px 8px 8px 10px;
             }
 
             .sectionToggler {
@@ -553,6 +559,10 @@
                     return instanceTypes;
                 },
 
+                getSummary: function() {
+                    return this.$("select :selected").text();
+                },
+
                 instanceTypeSelected: function() {
                     var instanceId = this.$("select :selected").val();
                     var instance = this.embeddedData.findInstanceById(instanceId);
@@ -696,6 +706,11 @@
                         }
                     }
                     return regions;
+                },
+
+                getSummary: function() {
+                    var selected = this.$("select :selected");
+                    return selected.text() + " (" + selected.val() + ")";
                 },
 
                 regionSelected: function() {
